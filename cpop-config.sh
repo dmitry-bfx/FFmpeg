@@ -1,12 +1,61 @@
 #!/bin/bash
 
+# Detect platform
+OS="$(uname -s)"
+
+case "$OS" in
+    Linux*)
+        PLATFORM="linux"
+        ;;
+    Darwin*)
+        PLATFORM="macos"
+        ;;
+    MINGW* | MSYS* | CYGWIN*)
+        PLATFORM="windows"
+        ;;
+    *)
+        echo "Unsupported platform: $OS"
+        exit 1
+        ;;
+esac
+
+
+# Set platform-specific flags
+PREFIX=""
+EXTRA_CFLAGS=""
+EXTRA_LDFLAGS=""
+EXTRA_LIBS=""
+TARGET_OS=""
+ARCH="x86_64"
+
+if [ "$PLATFORM" = "linux" ]; then
+    PREFIX="$HOME/ffmpeg_build_lgpl"
+    EXTRA_CFLAGS="-I$PWD/external/prores_apple -I$HOME/ffmpeg_build_lgpl/include"
+    EXTRA_LDFLAGS="-L$PWD/external/prores_apple -L$HOME/ffmpeg_build_lgpl/lib"
+    EXTRA_LIBS="-lpthread -lm -lProRes64 -lstdc++"
+    TARGET_OS="linux"
+elif [ "$PLATFORM" = "macos" ]; then
+    PREFIX="./builds"
+    EXTRA_CFLAGS="-I../gstreamer-support/ProRes-support/ProRes-SDK/include"
+    EXTRA_LDFLAGS="-L../gstreamer-support/ProRes-support/ProRes-SDK/lib/mac"
+    EXTRA_LIBS="-lpthread -lm -lProRes -lc++"
+    TARGET_OS="darwin"
+elif [ "$PLATFORM" = "windows" ]; then
+    PREFIX="./builds"
+    EXTRA_CFLAGS="-I../gstreamer-support/ProRes-support/ProRes-SDK/include"
+    EXTRA_LDFLAGS="-L../gstreamer-support/ProRes-support/ProRes-SDK/lib/windows"
+    EXTRA_LIBS="-lpthread -lm ../gstreamer-support/ProRes-support/ProRes-SDK/lib/windows/ProRes64_VS2017.lib -lstdc++"
+    TARGET_OS="mingw32"
+fi
+
 ./configure \
-  --prefix="$HOME/ffmpeg_build_lgpl" \
+  --target-os="$TARGET_OS" \
+  --arch="$ARCH" \
+  --prefix="$PREFIX" \
   --pkg-config-flags="--static" \
-  --extra-cflags="-I$PWD/external/prores_apple -I$HOME/ffmpeg_build_lgpl/include" \
-  --extra-ldflags="-L$PWD/external/prores_apple -L$HOME/ffmpeg_build_lgpl/lib" \
-  --extra-libs="-lpthread -lm -lProRes64 -lstdc++" \
-  --bindir="$HOME/bin_lgpl" \
+  --extra-cflags="$EXTRA_CFLAGS" \
+  --extra-ldflags="$EXTRA_LDFLAGS" \
+  --extra-libs="$EXTRA_LIBS" \
   --cc=gcc \
   --cxx=g++ \
   --enable-shared \
@@ -20,8 +69,6 @@
   --disable-nonfree \
   \
   --disable-decoder=prores \
-  --disable-decoder=prores_ks \
-  --disable-decoder=prores_aw \
   --disable-encoder=prores \
   --disable-encoder=prores_ks \
   --disable-encoder=prores_aw \

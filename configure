@@ -3148,7 +3148,13 @@ zmbv_encoder_select="deflate_wrapper"
 
 prores_apple=yes
 prores_apple_decoder=yes
-prores_apple_decoder_deps="dlopen"
+
+OS="$(uname -s)"
+
+if [[ "$OS" == Linux* ]]; then
+    prores_apple_decoder_deps="dlopen"
+fi
+
 
 enabled prores_apple_decoder && enable prores_apple # !!!!!
 enabled libprores_apple && add_extralibs -L$source_path/external/prores_apple/lib/linux -lProRes64
