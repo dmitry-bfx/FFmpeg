@@ -136,7 +136,7 @@ static av_cold int prores_apple_close(AVCodecContext *avctx)
     return 0;
 }
 
-static int prores_apple_decode_frame(AVCodecContext *avctx, void *data,
+static int prores_apple_decode_frame(AVCodecContext *avctx, AVFrame *data,
                                      int *got_frame, AVPacket *pkt)
 {
     if (!pkt || pkt->size <= 0) return AVERROR_INVALIDDATA;

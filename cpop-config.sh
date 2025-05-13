@@ -30,21 +30,17 @@ ARCH="x86_64"
 
 if [ "$PLATFORM" = "linux" ]; then
     PREFIX="$HOME/ffmpeg_build_lgpl"
-    EXTRA_CFLAGS="-I$PWD/external/prores_apple -I$HOME/ffmpeg_build_lgpl/include"
-    EXTRA_LDFLAGS="-L$PWD/external/prores_apple -L$HOME/ffmpeg_build_lgpl/lib"
-    EXTRA_LIBS="-lpthread -lm -lProRes64 -lstdc++"
+    EXTRA_CFLAGS="-I$HOME/ffmpeg_build_lgpl/include"
+    EXTRA_LDFLAGS="-L$HOME/ffmpeg_build_lgpl/lib"
+    EXTRA_LIBS="-lpthread -lm -lstdc++"
     TARGET_OS="linux"
 elif [ "$PLATFORM" = "macos" ]; then
     PREFIX="./builds"
-    EXTRA_CFLAGS="-I../gstreamer-support/ProRes-support/ProRes-SDK/include"
-    EXTRA_LDFLAGS="-L../gstreamer-support/ProRes-support/ProRes-SDK/lib/mac"
-    EXTRA_LIBS="-lpthread -lm -lProRes -lc++"
+    EXTRA_LIBS="-lpthread -lm -lc++"
     TARGET_OS="darwin"
 elif [ "$PLATFORM" = "windows" ]; then
     PREFIX="./builds"
-    EXTRA_CFLAGS="-I../gstreamer-support/ProRes-support/ProRes-SDK/include"
-    EXTRA_LDFLAGS="-L../gstreamer-support/ProRes-support/ProRes-SDK/lib/windows"
-    EXTRA_LIBS="-lpthread -lm ../gstreamer-support/ProRes-support/ProRes-SDK/lib/windows/ProRes64_VS2017.lib -lstdc++"
+    EXTRA_LIBS="-lpthread -lm -lstdc++"
     TARGET_OS="mingw32"
 fi
 
