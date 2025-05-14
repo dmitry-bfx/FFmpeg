@@ -45,12 +45,32 @@ static bridge_close_t    bridge_close_p     = NULL;
 static bridge_decode_t   bridge_decode_p    = NULL;
 static bridge_free_buf_t bridge_free_buf_p  = NULL;
 
+#if defined(WIN32)
+#define DEBUG_PRINT(fmt, ...) \
+{\
+    char buffer[1000]; \
+    snprintf(buffer, 1000, "[prores_wrapper] " fmt "\n", ##__VA_ARGS__); \
+    OutputDebugStringA(buffer); \
+}
+#else
 #define DEBUG_PRINT(fmt, ...)  fprintf(stderr, "[prores_wrapper] " fmt "\n", ##__VA_ARGS__)
+#endif
 
 static int load_bridge_library(void)
 {
+#if defined(WIN32)
+    const char *path = NULL;
+
+    char override[32000] = {0};
+    GetEnvironmentVariableA("PRORES_BRIDGE_PATH", override, 32000);
+    if( strlen(override) > 0 )
+      path = override;
+    else
+      path = LIBBRIDGE_NAME;
+#else
     const char *override = getenv("PRORES_BRIDGE_PATH");
     const char *path     = override ? override : LIBBRIDGE_NAME;
+#endif
 
     DEBUG_PRINT("Loading bridge library: %s", path);
     bridge_handle = OPEN_LIB(path);
