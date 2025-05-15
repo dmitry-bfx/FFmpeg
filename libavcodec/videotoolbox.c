@@ -36,7 +36,6 @@
 #include "hevc/hevcdec.h"
 #include "hwaccel_internal.h"
 #include "mpegvideo.h"
-#include "proresdec.h"
 #include <Availability.h>
 #include <AvailabilityMacros.h>
 #include <TargetConditionals.h>
