@@ -22,6 +22,7 @@ esac
 
 # Set platform-specific flags
 PREFIX=""
+EXTRA_CONFIGURE_FLAGS=""
 EXTRA_CFLAGS=""
 EXTRA_LDFLAGS=""
 EXTRA_LIBS=""
@@ -36,6 +37,9 @@ if [ "$PLATFORM" = "linux" ]; then
     TARGET_OS="linux"
 elif [ "$PLATFORM" = "macos" ]; then
     PREFIX="./builds"
+    EXTRA_CONFIGURE_FLAGS="--disable-asm"
+    EXTRA_CFLAGS="-I/opt/homebrew/include"
+    EXTRA_LDFLAGS="-L/opt/homebrew/lib"
     EXTRA_LIBS="-lpthread -lm -lc++"
     TARGET_OS="darwin"
 elif [ "$PLATFORM" = "windows" ]; then
@@ -46,6 +50,7 @@ fi
 
 ./configure \
   --target-os="$TARGET_OS" \
+  ${EXTRA_CONFIGURE_FLAGS} \
   --arch="$ARCH" \
   --prefix="$PREFIX" \
   --pkg-config-flags="--static" \
