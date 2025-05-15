@@ -202,5 +202,4 @@ const FFCodec ff_prores_apple_decoder = {
     .close          = prores_apple_close,
     .cb_type        = FF_CODEC_CB_TYPE_DECODE,
     .cb.decode      = prores_apple_decode_frame,
-    .is_decoder     = 1,
 };
