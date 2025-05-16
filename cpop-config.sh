@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DIR="${2:-./}"
+  
 # Detect platform
 OS="$(uname -s)"
 
@@ -28,7 +30,8 @@ EXTRA_LDFLAGS=""
 EXTRA_LIBS=""
 TARGET_OS=""
 ARCH="x86_64"
-
+COMPILER="--cc=gcc --cxx=g++"
+  
 if [ "$PLATFORM" = "linux" ]; then
     PREFIX="$HOME/ffmpeg_build_lgpl"
     EXTRA_CFLAGS="-I$HOME/ffmpeg_build_lgpl/include"
@@ -36,34 +39,51 @@ if [ "$PLATFORM" = "linux" ]; then
     EXTRA_LIBS="-lpthread -lm -lstdc++"
     TARGET_OS="linux"
 elif [ "$PLATFORM" = "macos" ]; then
-    PREFIX="./builds"
+    ARCH=$1
+    COMPILER="--cc=clang --cxx=clang++"
+    PREFIX="./builds/${ARCH}"
     EXTRA_CONFIGURE_FLAGS="--disable-asm"
-    EXTRA_CFLAGS="-I/opt/homebrew/include"
-    EXTRA_LDFLAGS="-L/opt/homebrew/lib"
+    
+    if [ "$ARCH" = "x86_64" ]; then
+        EXTRA_CFLAGS="-I/usr/local/include -arch ${ARCH}"
+        EXTRA_LDFLAGS="-L/usr/local/lib"
+    else
+        EXTRA_CFLAGS="-I/opt/homebrew/include -arch ${ARCH}"
+        EXTRA_LDFLAGS="-L/opt/homebrew/lib"
+    fi
+    EXTRA_LDFLAGS+=" -Wl,-rpath,@loader_path/../Frameworks -arch ${ARCH}"
     EXTRA_LIBS="-lpthread -lm -lc++"
     TARGET_OS="darwin"
+
+    # comment for release
+    EXTRA_CONFIGURE_FLAGS+=" --enable-debug --disable-optimizations --disable-stripping"
+    EXTRA_CFLAGS+=" -O0 -g"
+    #EXTRA_CONFIGURE_FLAGS+=" --disable-debug"
+  
 elif [ "$PLATFORM" = "windows" ]; then
     PREFIX="./builds"
     EXTRA_LIBS="-lpthread -lm -lstdc++"
     TARGET_OS="mingw32"
 fi
 
-./configure \
+echo "Configuring for " ${ARCH}
+
+$DIR/configure \
   --target-os="$TARGET_OS" \
   ${EXTRA_CONFIGURE_FLAGS} \
-  --arch="$ARCH" \
+  --arch=${ARCH} \
   --prefix="$PREFIX" \
   --pkg-config-flags="--static" \
   --extra-cflags="$EXTRA_CFLAGS" \
   --extra-ldflags="$EXTRA_LDFLAGS" \
   --extra-libs="$EXTRA_LIBS" \
-  --cc=gcc \
-  --cxx=g++ \
+  ${COMPILER} \
   --enable-shared \
   --disable-static \
   --disable-doc \
-  --disable-debug \
   --enable-small \
+  --disable-devices \
+  --disable-filters \
   \
   --enable-version3 \
   --disable-gpl \
@@ -128,4 +148,4 @@ fi
   --enable-bsf=extract_extradata \
   --enable-bsf=h264_mp4toannexb \
   --enable-bsf=hevc_mp4toannexb \
-  --enable-bsf=prores_metadata
+  --enable-bsf=prores_metadata || exit 255
