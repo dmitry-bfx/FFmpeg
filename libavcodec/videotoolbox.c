@@ -30,6 +30,7 @@
 #include "libavutil/hwcontext.h"
 #include "libavutil/pixdesc.h"
 #include "bytestream.h"
+#include "prores_apple.h"
 #include "decode.h"
 #include "internal.h"
 #include "h264dec.h"
@@ -1133,7 +1134,7 @@ static int videotoolbox_prores_decode_slice(AVCodecContext *avctx,
 
 static int videotoolbox_prores_end_frame(AVCodecContext *avctx)
 {
-    ProresContext *ctx = avctx->priv_data;
+    ProResAppleCtx *ctx = avctx->priv_data;
     AVFrame *frame = ctx->frame;
 
     return ff_videotoolbox_common_end_frame(avctx, frame);

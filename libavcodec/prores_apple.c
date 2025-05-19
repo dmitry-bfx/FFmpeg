@@ -14,6 +14,7 @@
 #include "libavcodec/avcodec.h"
 #include "libavcodec/codec_internal.h"
 
+#include "prores_apple.h"
 #if defined(_WIN32)
     #include <windows.h>
     #define LIBBRIDGE_NAME  "prores_bridge.dll"
@@ -124,9 +125,6 @@ static void unpack_v210_line(const uint8_t *src, uint16_t *dst_y,
     }
 }
 
-// FFmpeg context -----------------------------------------------------
-typedef struct ProResAppleCtx { bridge_ctx dec; } ProResAppleCtx;
-
 static av_cold int prores_apple_init(AVCodecContext *avctx)
 {
     if (load_bridge_library() < 0) return AVERROR_EXTERNAL;
@@ -140,6 +138,41 @@ static av_cold int prores_apple_init(AVCodecContext *avctx)
         return AVERROR_EXTERNAL;
     }
 
+    avctx->bits_per_raw_sample = 10;
+    switch (avctx->codec_tag) {
+        case MKTAG('a','p','c','o'):
+            avctx->profile = AV_PROFILE_PRORES_PROXY;
+            break;
+        case MKTAG('a','p','c','s'):
+            avctx->profile = AV_PROFILE_PRORES_LT;
+            break;
+        case MKTAG('a','p','c','n'):
+            avctx->profile = AV_PROFILE_PRORES_STANDARD;
+            break;
+        case MKTAG('a','p','c','h'):
+            avctx->profile = AV_PROFILE_PRORES_HQ;
+            break;
+        case MKTAG('a','p','4','h'):
+            avctx->profile = AV_PROFILE_PRORES_4444;
+            avctx->bits_per_raw_sample = 12;
+            break;
+        case MKTAG('a','p','4','x'):
+            avctx->profile = AV_PROFILE_PRORES_XQ;
+            avctx->bits_per_raw_sample = 12;
+            break;
+        case MKTAG('a','p','r','0'):
+            avctx->profile = AV_PROFILE_PRORES_RAW;
+            avctx->bits_per_raw_sample = 10;
+            break;
+        case MKTAG('a','p','r','h'):
+            avctx->profile = AV_PROFILE_PRORES_RAW_HQ;
+            avctx->bits_per_raw_sample = 12;
+            break;
+        default:
+            avctx->profile = AV_PROFILE_UNKNOWN;
+            av_log(avctx, AV_LOG_WARNING, "Unknown prores profile %d\n", avctx->codec_tag);
+      }
+  
     avctx->priv_data = ctx;
     avctx->pix_fmt   = AV_PIX_FMT_YUV422P10;
     return 0;
@@ -159,7 +192,10 @@ static av_cold int prores_apple_close(AVCodecContext *avctx)
 static int prores_apple_decode_frame(AVCodecContext *avctx, AVFrame *data,
                                      int *got_frame, AVPacket *pkt)
 {
-    if (!pkt || pkt->size <= 0) return AVERROR_INVALIDDATA;
+    if (!pkt || pkt->size <= 0) {
+        DEBUG_PRINT("pkt is null %d", pkt ? pkt->size : -10);
+        return AVERROR_INVALIDDATA;
+    }
 
     ProResAppleCtx *ctx = avctx->priv_data;
     AVFrame *frame      = data;
@@ -168,13 +204,19 @@ static int prores_apple_decode_frame(AVCodecContext *avctx, AVFrame *data,
     int ret = bridge_decode_p(ctx->dec, pkt->data, pkt->size,
                               avctx->width, avctx->height,
                               &raw_v210, &row_bytes);
-    if (ret < 0) return AVERROR_EXTERNAL;
+    if (ret < 0) {
+      DEBUG_PRINT("bridge_decode_p failed with error: %d", ret);
+      return AVERROR_EXTERNAL;
+    }
 
     frame->format = AV_PIX_FMT_YUV422P10;
     frame->width  = avctx->width;
     frame->height = avctx->height;
     if ((ret = av_frame_get_buffer(frame, 32)) < 0) {
-        bridge_free_buf_p(raw_v210); return ret;
+        bridge_free_buf_p(raw_v210);
+        DEBUG_PRINT("av_frame_get_buffer failed with error: %d", ret);
+        
+        return ret;
     }
 
     for (int y = 0; y < frame->height; ++y) {
@@ -202,4 +244,5 @@ const FFCodec ff_prores_apple_decoder = {
     .close          = prores_apple_close,
     .cb_type        = FF_CODEC_CB_TYPE_DECODE,
     .cb.decode      = prores_apple_decode_frame,
+    .p.profiles     = NULL_IF_CONFIG_SMALL(ff_prores_profiles),
 };

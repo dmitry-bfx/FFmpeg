@@ -179,6 +179,8 @@ const AVProfile ff_prores_profiles[] = {
     { AV_PROFILE_PRORES_HQ,       "HQ"       },
     { AV_PROFILE_PRORES_4444,     "4444"     },
     { AV_PROFILE_PRORES_XQ,       "XQ"       },
+    { AV_PROFILE_PRORES_RAW,      "Raw"      },
+    { AV_PROFILE_PRORES_RAW_HQ,   "Raw HQ"   },
     { AV_PROFILE_UNKNOWN }
 };
 
